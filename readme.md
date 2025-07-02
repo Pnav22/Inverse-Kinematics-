@@ -16,7 +16,8 @@ A dynamic, interactive IK simulation tool built in vanilla JavaScript and HTML C
 - Teaching forward/inverse kinematics concepts
 
 ## Try It Online
-[Live Demo]([[https://yourusername.github.io/ik-simulator](https://epe5phdpk7lviau25hb6zs.streamlit.app/)](https://epe5phdpk7lviau25hb6zs.streamlit.app/))
+[Demo](https://epe5phdpk7lviau25hb6zs.streamlit.app/)
+
 
 ## Tech Stack
 - HTML + CSS + Vanilla JS
