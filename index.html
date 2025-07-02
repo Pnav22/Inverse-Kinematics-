@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>IK Simulation with Animation</title>
+  <style>
+    body { margin: 0; display: flex; height: 100vh; overflow: hidden; font-family: sans-serif; }
+    canvas { background: #111; flex: 1; }
+    #sidebar {
+      width: 300px;
+      background: #1e1e1e;
+      color: #f5f5f5;
+      padding: 1rem;
+      overflow-y: auto;
+      font-size: 14px;
+    }
+    #toolbar {
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #222;
+      padding: 10px;
+      z-index: 10;
+      display: flex;
+      gap: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      border-radius: 0 0 8px 8px;
+    }
+    button {
+      padding: 8px 12px;
+      font-size: 14px;
+    }
+    progress {
+      width: 100%;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <div id="toolbar">
+    <button id="setStart">Set Start Position</button>
+    <button id="setEnd">Set End Position</button>
+    <button id="startAnim">Start Animation</button>
+    <button id="stopAnim">Stop Animation</button>
+  </div>
+
+  <div id="sidebar">
+    <progress id="progress" value="0" max="100"></progress>
+    <div id="math"></div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth - 300;
+    canvas.height = window.innerHeight;
+
+    class Joint {
+      constructor(x, y, length) {
+        this.x = x;
+        this.y = y;
+        this.length = length;
+      }
+    }
+
+    let joints = [];
+    const baseX = canvas.width / 2;
+    const baseY = canvas.height / 2;
+    const numJoints = 5;
+    const jointLength = 80;
+
+    function createChain() {
+      joints = [];
+      let x = baseX, y = baseY;
+      for (let i = 0; i < numJoints; i++) {
+        joints.push(new Joint(x, y, jointLength));
+        x += jointLength;
+      }
+    }
+
+    createChain();
+
+    let target = { x: joints.at(-1).x, y: joints.at(-1).y };
+    let startPos = null;
+    let endPos = null;
+    let animating = false;
+    let t = 0;
+    let dragging = false;
+
+    document.getElementById("setStart").onclick = () => {
+      startPos = { x: target.x, y: target.y };
+    };
+
+    document.getElementById("setEnd").onclick = () => {
+      endPos = { x: target.x, y: target.y };
+    };
+
+    document.getElementById("startAnim").onclick = () => {
+      if (startPos && endPos) {
+        animating = true;
+        t = 0;
+      }
+    };
+
+    document.getElementById("stopAnim").onclick = () => {
+      animating = false;
+    };
+
+    canvas.addEventListener("mousedown", e => {
+      dragging = true;
+      target.x = e.clientX;
+      target.y = e.clientY;
+    });
+
+    canvas.addEventListener("mouseup", () => {
+      dragging = false;
+    });
+
+    canvas.addEventListener("mousemove", e => {
+      if (dragging) {
+        target.x = e.clientX;
+        target.y = e.clientY;
+      }
+    });
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function solveIK(goal) {
+      let end = joints[joints.length - 1];
+      let dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+      let bX = joints[0].x, bY = joints[0].y;
+      if (dist(joints[0], goal) > numJoints * jointLength) {
+        let angle = Math.atan2(goal.y - joints[0].y, goal.x - joints[0].x);
+        joints[0].x = bX; joints[0].y = bY;
+        for (let i = 1; i < joints.length; i++) {
+          joints[i].x = joints[i - 1].x + jointLength * Math.cos(angle);
+          joints[i].y = joints[i - 1].y + jointLength * Math.sin(angle);
+        }
+      } else {
+        let diff = dist(end, goal), iter = 0;
+        while (diff > 1 && iter++ < 10) {
+          end.x = goal.x; end.y = goal.y;
+          for (let i = joints.length - 2; i >= 0; i--) {
+            let dx = joints[i].x - joints[i + 1].x;
+            let dy = joints[i].y - joints[i + 1].y;
+            let d = Math.hypot(dx, dy);
+            let r = jointLength / d;
+            joints[i].x = joints[i + 1].x + dx * r;
+            joints[i].y = joints[i + 1].y + dy * r;
+          }
+          joints[0].x = bX; joints[0].y = bY;
+          for (let i = 1; i < joints.length; i++) {
+            let dx = joints[i].x - joints[i - 1].x;
+            let dy = joints[i].y - joints[i - 1].y;
+            let d = Math.hypot(dx, dy);
+            let r = jointLength / d;
+            joints[i].x = joints[i - 1].x + dx * r;
+            joints[i].y = joints[i - 1].y + dy * r;
+          }
+          diff = dist(end, goal);
+        }
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "#0ff";
+      ctx.fillStyle = "#f0f";
+
+      for (let i = 0; i < joints.length - 1; i++) {
+        ctx.beginPath();
+        ctx.moveTo(joints[i].x, joints[i].y);
+        ctx.lineTo(joints[i + 1].x, joints[i + 1].y);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(joints[i].x, joints[i].y, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      let last = joints.at(-1);
+      ctx.beginPath();
+      ctx.arc(last.x, last.y, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function animate() {
+      if (animating && startPos && endPos) {
+        t += 0.01;
+        if (t >= 1) {
+          t = 1;
+          animating = false;
+        }
+        const lerpedTarget = {
+          x: lerp(startPos.x, endPos.x, t),
+          y: lerp(startPos.y, endPos.y, t)
+        };
+        solveIK(lerpedTarget);
+        document.getElementById("progress").value = t * 100;
+        document.getElementById("math").innerHTML = `
+          <b>Step t:</b> ${t.toFixed(2)}<br>
+          <b>Target X:</b> ${lerpedTarget.x.toFixed(1)}<br>
+          <b>Target Y:</b> ${lerpedTarget.y.toFixed(1)}<br>
+          <b>Angle to Target:</b> ${(Math.atan2(lerpedTarget.y - baseY, lerpedTarget.x - baseX) * 180 / Math.PI).toFixed(1)}°<br>
+          <b>IK Equation:</b> Joint[i].pos = Joint[i-1].pos + L * unit(dir)<br>
+          <b>Direction Vector:</b> (${(lerpedTarget.x - baseX).toFixed(2)}, ${(lerpedTarget.y - baseY).toFixed(2)})
+        `;
+      } else {
+        solveIK(target);
+      }
+      draw();
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
