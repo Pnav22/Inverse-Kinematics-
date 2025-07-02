@@ -5,14 +5,9 @@ A dynamic, interactive IK simulation tool built in vanilla JavaScript and HTML C
 - Real-time inverse kinematics with drag interaction
 - Math panel explaining each IK step
 - Animate start/end movement with progress control
-- Export joint data as CSV/JSON
-- Obstacle-aware path planning (coming soon)
-- Forward Kinematics mode (coming soon)
-- Educational tab with algorithm visualizations and LaTeX-rendered equations
-- Support for CCD and FABRIK algorithms (coming soon)
 
 ## Screenshots
-![demo screenshot](./screenshots/ik-demo.png)
+![image](https://github.com/user-attachments/assets/82add2e4-1697-4a12-9525-19c932b70cc1)
 
 ## Use Cases
 - Robotics simulation & arm design
@@ -21,7 +16,7 @@ A dynamic, interactive IK simulation tool built in vanilla JavaScript and HTML C
 - Teaching forward/inverse kinematics concepts
 
 ## Try It Online
-[Live Demo](https://yourusername.github.io/ik-simulator)
+[Live Demo]([https://yourusername.github.io/ik-simulator](https://epe5phdpk7lviau25hb6zs.streamlit.app/))
 
 ## Tech Stack
 - HTML + CSS + Vanilla JS
