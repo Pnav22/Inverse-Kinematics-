@@ -31,6 +31,11 @@
       padding: 8px 12px;
       font-size: 14px;
     }
+    button:disabled {
+      background: #444;
+      color: #999;
+      cursor: not-allowed;
+    }
     progress {
       width: 100%;
       margin-top: 10px;
@@ -42,14 +47,20 @@
 
   <div id="toolbar">
     <button id="setStart">Set Start Position</button>
-    <button id="setEnd">Set End Position</button>
-    <button id="startAnim">Start Animation</button>
+    <button id="setEnd" disabled>Set End Position</button>
+    <button id="startAnim" disabled>Start Animation</button>
     <button id="stopAnim">Stop Animation</button>
   </div>
 
   <div id="sidebar">
     <progress id="progress" value="0" max="100"></progress>
     <div id="math"></div>
+    <p><b>Instructions:</b><br>
+      1. Drag the arm and click <i>Set Start Position</i>.<br>
+      2. Move again and click <i>Set End Position</i>.<br>
+      3. Click <i>Start Animation</i> to play.<br>
+      4. Click <i>Stop Animation</i> to reset.
+    </p>
   </div>
 
   <script>
@@ -90,23 +101,41 @@
     let t = 0;
     let dragging = false;
 
-    document.getElementById("setStart").onclick = () => {
+    const setStartBtn = document.getElementById("setStart");
+    const setEndBtn = document.getElementById("setEnd");
+    const startAnimBtn = document.getElementById("startAnim");
+    const stopAnimBtn = document.getElementById("stopAnim");
+
+    setStartBtn.onclick = () => {
       startPos = { x: target.x, y: target.y };
+      setStartBtn.disabled = true;
+      setEndBtn.disabled = false;
     };
 
-    document.getElementById("setEnd").onclick = () => {
+    setEndBtn.onclick = () => {
       endPos = { x: target.x, y: target.y };
+      setEndBtn.disabled = true;
+      startAnimBtn.disabled = false;
     };
 
-    document.getElementById("startAnim").onclick = () => {
+    startAnimBtn.onclick = () => {
       if (startPos && endPos) {
         animating = true;
         t = 0;
+        startAnimBtn.disabled = true;
       }
     };
 
-    document.getElementById("stopAnim").onclick = () => {
+    stopAnimBtn.onclick = () => {
       animating = false;
+      startPos = null;
+      endPos = null;
+      t = 0;
+      setStartBtn.disabled = false;
+      setEndBtn.disabled = true;
+      startAnimBtn.disabled = true;
+      document.getElementById("progress").value = 0;
+      document.getElementById("math").innerHTML = "";
     };
 
     canvas.addEventListener("mousedown", e => {
